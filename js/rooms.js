@@ -18,4 +18,3 @@ function renderRooms(){
     +cardHTML('Сводка по корпусам',`<div class="table-wrap"><table><thead><tr><th>Корпус</th><th class="num">Аудиторий</th><th class="num">Мест</th><th class="num">Комп. мест</th><th>По типам</th></tr></thead><tbody>${perB||'<tr><td colspan="5" class="hint" style="padding:14px">Нет данных.</td></tr>'}</tbody></table></div>`);
   renderEntTable('building','bldTable');renderEntTable('room','roomTable');
 }
-
