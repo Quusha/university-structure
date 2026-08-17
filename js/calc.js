@@ -42,4 +42,3 @@ function computeScenario(){
   const row=(l,a,b)=>{const d=b-a,p=a?d/a*100:0;return `<tr><td>${l}</td><td class="num">${money(a)}</td><td class="num">${money(b)}</td><td class="num" style="color:${d>0?'var(--danger)':d<0?'var(--good)':'inherit'}">${d>=0?'+':''}${money(d)} (${d>=0?'+':''}${p.toFixed(1)}%)</td></tr>`};
   document.getElementById('scResult').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Показатель</th><th class="num">Сейчас</th><th class="num">Сценарий</th><th class="num">Δ</th></tr></thead><tbody>${row('ФОТ / мес',mpCur,mpNew)}${row('ФОТ / год',mpCur*12,mpNew*12)}${row('Начисления / год',accrCur,accrNew)}${row('Итого фонд / год',totCur,totNew)}</tbody></table></div>`;
 }
-
