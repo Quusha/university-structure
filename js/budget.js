@@ -15,4 +15,3 @@ function renderBudget(){
     +cardHTML('Расходы по статьям',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'expense\')">＋ Расход</button>':''}${impBtn('expense')}</div><div class="barchart" style="margin-bottom:14px">${bars(expByArt)}</div><div id="expTable"></div>`);
   renderEntTable('income','incTable');renderEntTable('expense','expTable');
 }
-
