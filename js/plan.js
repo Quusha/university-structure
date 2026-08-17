@@ -50,4 +50,3 @@ function buildPlan(){
   state.plan=Object.keys(map).map(k=>{const p=k.split('|');return {id:uid(),unitId:p[0],article:p[1],planAmount:map[k],year:state.settings.year}});
   logAudit('формирование плана','План развития',state.plan.length+' позиций');save();renderPlan();toast('План сформирован: '+state.plan.length+' позиций');
 }
-
