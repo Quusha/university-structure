@@ -51,4 +51,3 @@ function ensureShape(){
   state.dict.roomTypes=state.dict.roomTypes||['Лекционная','Практическая/семинарская','Компьютерная','Лаборатория','Спортивная','Актовый зал','Прочее'];
   if(!state.settings.year)state.settings.year=new Date().getFullYear();
 }
-
