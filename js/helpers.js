@@ -42,4 +42,3 @@ function periodBarHTML(){
 }
 function setPeriod(v){state.settings.period=v;save();renderAccruals();renderAnalytics()}
 function setStart(v){state.settings.startDate=v;save();renderAccruals();renderAnalytics()}
-
