@@ -244,6 +244,8 @@
   <button data-tab="tariff">⏱ Тарификация</button>
   <button data-tab="budget">💰 Бюджет</button>
   <button data-tab="contingent">🎓 Контингент</button>
+  <button data-tab="programs">📚 Обр. программы</button>
+  <button data-tab="rooms">🏫 Аудиторный фонд</button>
   <button data-tab="inventory">📦 Инвентарь</button>
   <button data-tab="plan">🗺 План развития</button>
   <button data-tab="settings">⚙ Настройки</button>
@@ -256,6 +258,7 @@
       <div class="hd"><h2>Дерево подразделений</h2><div class="spacer"></div>
         <button class="btn ghost sm" onclick="expandAll(true)">Развернуть</button>
         <button class="btn ghost sm" onclick="expandAll(false)">Свернуть</button>
+        <button class="btn ghost sm" onclick="openImport('units')">⤓ Импорт</button>
         <button class="btn sm" onclick="openUnitModal()">＋ Подразделение</button></div>
       <div class="bd">
         <p class="hint" style="margin-top:0">Наведите на подразделение — добавить дочернее / сотрудника, редактировать, удалить. Цифры справа: сотрудники / ставки / ФОТ с доплатами (включая вложенные подразделения).</p>
@@ -298,6 +301,7 @@
           <input type="text" id="empSearch" placeholder="Поиск: ФИО / должность…" oninput="renderEmployees()">
           <select id="empUnitFilter" onchange="renderEmployees()"></select>
         </div>
+        <button class="btn ghost sm" onclick="openImport('employees')">⤓ Импорт</button>
         <button class="btn sm" onclick="openEmpModal()">＋ Сотрудник</button></div>
       <div class="bd">
         <div class="table-wrap"><table>
@@ -366,6 +370,8 @@
   <section class="tab" id="tab-contingent"><div id="contBody"></div></section>
   <section class="tab" id="tab-inventory"><div id="invBody"></div></section>
   <section class="tab" id="tab-plan"><div id="planBody"></div></section>
+  <section class="tab" id="tab-programs"><div id="progBody"></div></section>
+  <section class="tab" id="tab-rooms"><div id="roomBody"></div></section>
   <section class="tab" id="tab-settings"><div id="setBody"></div></section>
 </main>
 
@@ -426,6 +432,11 @@ function ensureShape(){
   state.plan=state.plan||[];
   state.audit=state.audit||[];
   state.roleCurrent=state.roleCurrent||'Администратор';
+  state.programs=state.programs||[];
+  state.buildings=state.buildings||[];
+  state.rooms=state.rooms||[];
+  state.dict.programLevels=state.dict.programLevels||['Бакалавриат','Магистратура','Докторантура','Колледж'];
+  state.dict.roomTypes=state.dict.roomTypes||['Лекционная','Практическая/семинарская','Компьютерная','Лаборатория','Спортивная','Актовый зал','Прочее'];
   if(!state.settings.year)state.settings.year=new Date().getFullYear();
 }
 
@@ -786,7 +797,7 @@ function exportCSV(){
 function clearAll(){if(!confirm('Удалить ВСЕ подразделения и сотрудников? Сделайте экспорт для резервной копии.'))return;state={units:[],employees:[],accruals:defaultAccruals(),settings:{period:state.settings.period,startDate:state.settings.startDate}};collapsed=new Set();ocCollapsed=new Set();ensureShape();save();renderAll();toast('Очищено')}
 
 /* ================= RENDER ALL ================= */
-function renderAll(){applyRole();renderTree();renderOrgChart();renderEmployees();renderAccruals();renderAnalytics();renderDashboard();renderBudget();renderContingent();renderInventory();renderPlan();}
+function renderAll(){applyRole();renderTree();renderOrgChart();renderEmployees();renderAccruals();renderAnalytics();renderDashboard();renderBudget();renderContingent();renderPrograms();renderRooms();renderInventory();renderPlan();}
 
 /* ================= SEED ================= */
 function buildSeed(){
@@ -841,9 +852,9 @@ function buildSeed(){
 /* ================= ROLES / AUDIT / GENERIC ENGINE ================= */
 const ROLES={
  'Администратор':{tabs:'*',edit:true},
- 'Финансист':{tabs:['dashboard','budget','contingent','plan','analytics','structure','orgchart','employees','settings'],edit:true},
- 'Кадровик':{tabs:['dashboard','structure','orgchart','employees','accruals','calc','tariff','settings'],edit:true},
- 'МОЛ (имущество)':{tabs:['dashboard','inventory','settings'],edit:true},
+ 'Финансист':{tabs:['dashboard','budget','contingent','programs','plan','analytics','structure','orgchart','employees','settings'],edit:true},
+ 'Кадровик':{tabs:['dashboard','structure','orgchart','employees','accruals','calc','tariff','programs','rooms','settings'],edit:true},
+ 'МОЛ (имущество)':{tabs:['dashboard','inventory','rooms','settings'],edit:true},
  'Руководитель':{tabs:['dashboard','structure','orgchart','plan'],edit:false},
  'Наблюдатель':{tabs:'*',edit:false},
 };
@@ -884,7 +895,7 @@ const ENT={
    {k:'period',l:'Период',t:'text'},{k:'unitId',l:'Подразделение',t:'refUnit'},
    {k:'doc',l:'Документ',t:'text'},{k:'note',l:'Примечание',t:'text'}]},
  contingent:{coll:'contingent',title:'Группа контингента',fields:[
-   {k:'program',l:'ОП / ГОП',t:'text',req:1},{k:'course',l:'Курс',t:'text'},
+   {k:'program',l:'ОП / ГОП',t:'text',req:1},{k:'programId',l:'Образовательная программа',t:'refProgram'},{k:'course',l:'Курс',t:'text'},
    {k:'form',l:'Форма',t:'select',opts:['Очная','Заочная','Вечерняя']},
    {k:'source',l:'Источник',t:'select',opts:['Госзаказ (грант)','Собственные средства']},
    {k:'count',l:'Численность',t:'number',req:1},{k:'tariff',l:'Финанс. на 1 обуч./год, ₸',t:'number'}],
@@ -898,6 +909,17 @@ const ENT={
    {k:'supplier',l:'Поставщик',t:'text',hideCol:1},{k:'desc',l:'Описание',t:'text',hideCol:1}],
    extraCols:[{l:'Остаточная, ₸',render:r=>fmt(assetAmort(r).residual)}],
    rowActions:r=>`<button class="btn ghost sm" onclick="assetMove('${r.id}')" title="Движение">↦</button>`},
+ program:{coll:'programs',title:'Образовательная программа',fields:[
+   {k:'code',l:'Шифр (ГОП/ОП)',t:'text',req:1},{k:'name',l:'Наименование',t:'text',req:1},
+   {k:'level',l:'Уровень',t:'dict',dict:'programLevels'},{k:'deptId',l:'Кафедра/подразделение',t:'refUnit'},
+   {k:'buildingId',l:'Основной корпус',t:'refBuilding'},{k:'lang',l:'Язык',t:'select',opts:['Каз','Рус','Англ','Каз/Рус']}],
+   extraCols:[{l:'Контингент',render:r=>fmt(progContingent(r.id))}]},
+ building:{coll:'buildings',title:'Корпус',fields:[
+   {k:'name',l:'Наименование / № корпуса',t:'text',req:1},{k:'address',l:'Адрес',t:'text'}]},
+ room:{coll:'rooms',title:'Аудитория',fields:[
+   {k:'buildingId',l:'Корпус',t:'refBuilding',req:1},{k:'name',l:'№ / название',t:'text',req:1},
+   {k:'type',l:'Тип',t:'dict',dict:'roomTypes'},{k:'seats',l:'Мест',t:'number'},
+   {k:'computers',l:'Компьютеров',t:'number'},{k:'note',l:'Примечание',t:'text'}]},
 };
 
 function fieldInput(f,val){
@@ -906,6 +928,8 @@ function fieldInput(f,val){
   if(f.t==='dict')return `<select id="ef_${f.k}">${(state.dict[f.dict]||[]).map(o=>`<option ${v===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
   if(f.t==='refEmp')return `<select id="ef_${f.k}"><option value="">—</option>${state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(e=>`<option value="${e.id}" ${v===e.id?'selected':''}>${esc(e.name)} — ${esc(e.position)}</option>`).join('')}</select>`;
   if(f.t==='refUnit')return `<select id="ef_${f.k}"><option value="">—</option>${state.units.slice().sort((a,b)=>unitPath(a.id).localeCompare(unitPath(b.id))).map(u=>`<option value="${u.id}" ${v===u.id?'selected':''}>${esc(unitPath(u.id))}</option>`).join('')}</select>`;
+  if(f.t==='refProgram')return `<select id="ef_${f.k}"><option value="">—</option>${state.programs.slice().sort((a,b)=>((a.code||a.name||'')+'').localeCompare((b.code||b.name||'')+'')).map(p=>`<option value="${p.id}" ${v===p.id?'selected':''}>${esc((p.code?p.code+' — ':'')+(p.name||''))}</option>`).join('')}</select>`;
+  if(f.t==='refBuilding')return `<select id="ef_${f.k}"><option value="">—</option>${state.buildings.slice().sort((a,b)=>((a.name||'')+'').localeCompare((b.name||'')+'')).map(b=>`<option value="${b.id}" ${v===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>`;
   if(f.t==='date')return `<input id="ef_${f.k}" type="date" value="${esc(v)}">`;
   if(f.t==='number')return `<input id="ef_${f.k}" type="number" step="any" value="${v}">`;
   return `<input id="ef_${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||'')}">`;
@@ -933,7 +957,7 @@ function renderEntTable(key,containerId){
   const cols=cfg.fields.filter(f=>!f.hideCol);
   const head=cols.map(f=>`<th class="${f.t==='number'?'num':''}">${esc(f.l)}</th>`).join('')+(cfg.extraCols||[]).map(x=>`<th class="num">${esc(x.l)}</th>`).join('')+'<th></th>';
   const rows=coll.map(r=>{
-    const tds=cols.map(f=>{let v=r[f.k];if(f.t==='refEmp')v=empName(v);else if(f.t==='refUnit')v=v?unitPath(v):'';else if(f.t==='number')v=fmt(v);return `<td class="${f.t==='number'?'num':''}">${esc(String(v==null?'':v))}</td>`}).join('');
+    const tds=cols.map(f=>{let v=r[f.k];if(f.t==='refEmp')v=empName(v);else if(f.t==='refUnit')v=v?unitPath(v):'';else if(f.t==='refProgram'){const p=state.programs.find(x=>x.id===v);v=p?(p.code||p.name):''}else if(f.t==='refBuilding'){const b=state.buildings.find(x=>x.id===v);v=b?b.name:''}else if(f.t==='number')v=fmt(v);return `<td class="${f.t==='number'?'num':''}">${esc(String(v==null?'':v))}</td>`}).join('');
     const extra=(cfg.extraCols||[]).map(x=>`<td class="num">${x.render(r)}</td>`).join('');
     const acts=canEdit()?`<td class="num" style="white-space:nowrap">${cfg.rowActions?cfg.rowActions(r):''}<button class="btn ghost sm" onclick="openEntModal('${key}','${r.id}')">✎</button><button class="btn danger sm" onclick="delEnt('${key}','${r.id}')">🗑</button></td>`:'<td></td>';
     return `<tr>${tds}${extra}${acts}</tr>`;
@@ -1017,8 +1041,8 @@ function renderTariff(){
   const c=document.getElementById('tariffBody');if(!c)return;
   const rateOpts=state.hourlyRates.map(r=>`<option value="${r.rate}">${esc(r.category)} — ${fmt(r.rate)} ₸/час</option>`).join('');
   c.innerHTML=
-   cardHTML('Учебная нагрузка',`<div style="margin-bottom:10px">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'load\')">＋ Нагрузка</button>':''}</div><div id="loadTable"></div>`)
-   +cardHTML('Почасовые ставки',`<div style="margin-bottom:10px">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'hourlyRate\')">＋ Ставка</button>':''}</div><div id="rateTable"></div>`)
+   cardHTML('Учебная нагрузка',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'load\')">＋ Нагрузка</button>':''}${impBtn('load')}</div><div id="loadTable"></div>`)
+   +cardHTML('Почасовые ставки',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'hourlyRate\')">＋ Ставка</button>':''}${impBtn('hourlyRate')}</div><div id="rateTable"></div>`)
    +cardHTML('Сравнение: оклад vs почасовая',`<div class="field" style="max-width:360px"><label>Ставка для сравнения</label><select id="tfRate">${rateOpts||'<option value="2500">2500 ₸/час</option>'}</select></div><div id="tfCompare"></div>`);
   renderEntTable('load','loadTable');renderEntTable('hourlyRate','rateTable');tariffCompare();
   const sel=document.getElementById('tfRate');if(sel)sel.onchange=tariffCompare;
@@ -1045,8 +1069,8 @@ function renderBudget(){
       <div class="kpi accent"><div class="label">Доходы</div><div class="value">${money(incTot)}</div><div class="sub">вкл. контингент ${money(contIncome)}</div></div>
       <div class="kpi"><div class="label">Расходы</div><div class="value">${money(expTot)}</div><div class="sub">внесённые статьи</div></div>
       <div class="kpi accent"><div class="label">Сальдо</div><div class="value">${money(incTot-expTot)}</div><div class="sub">доходы − расходы</div></div></div>`
-    +cardHTML('Доходы по статьям',`<div style="margin-bottom:10px">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'income\')">＋ Доход</button>':''}</div><div class="barchart" style="margin-bottom:14px">${bars(incByArt)}</div><div id="incTable"></div>`)
-    +cardHTML('Расходы по статьям',`<div style="margin-bottom:10px">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'expense\')">＋ Расход</button>':''}</div><div class="barchart" style="margin-bottom:14px">${bars(expByArt)}</div><div id="expTable"></div>`);
+    +cardHTML('Доходы по статьям',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'income\')">＋ Доход</button>':''}${impBtn('income')}</div><div class="barchart" style="margin-bottom:14px">${bars(incByArt)}</div><div id="incTable"></div>`)
+    +cardHTML('Расходы по статьям',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'expense\')">＋ Расход</button>':''}${impBtn('expense')}</div><div class="barchart" style="margin-bottom:14px">${bars(expByArt)}</div><div id="expTable"></div>`);
   renderEntTable('income','incTable');renderEntTable('expense','expTable');
 }
 
@@ -1060,7 +1084,7 @@ function renderContingent(){
       <div class="kpi"><div class="label">Всего обучающихся</div><div class="value">${fmt(total)}</div><div class="sub">${state.contingent.length} групп</div></div>
       <div class="kpi"><div class="label">Госзаказ / Собственные</div><div class="value">${fmt(gos)} / ${fmt(total-gos)}</div></div>
       <div class="kpi accent"><div class="label">Доход от контингента (год)</div><div class="value">${money(income)}</div><div class="sub">учтено в бюджете</div></div></div>`
-    +cardHTML('Группы контингента',`<div style="margin-bottom:10px">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'contingent\')">＋ Группа</button>':''}</div><div id="contTable"></div>`);
+    +cardHTML('Группы контингента',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'contingent\')">＋ Группа</button>':''}${impBtn('contingent')}</div><div id="contTable"></div>`);
   renderEntTable('contingent','contTable');
 }
 
@@ -1074,7 +1098,7 @@ function renderInventory(){
      <div class="kpi"><div class="label">Первонач. стоимость</div><div class="value">${money(cost)}</div></div>
      <div class="kpi"><div class="label">Износ</div><div class="value">${money(wear)}</div></div>
      <div class="kpi accent"><div class="label">Остаточная</div><div class="value">${money(cost-wear)}</div></div></div>`
-   +cardHTML('Реестр материальных ценностей',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'asset\')">＋ Объект</button>':''}<input id="invSearch" placeholder="поиск: наименование / № / МОЛ" oninput="renderEntTable('asset','invTable')" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-width:220px"></div><div id="invTable"></div>`)
+   +cardHTML('Реестр материальных ценностей',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'asset\')">＋ Объект</button>':''}${impBtn('asset')}<input id="invSearch" placeholder="поиск: наименование / № / МОЛ" oninput="renderEntTable('asset','invTable')" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-width:220px"></div><div id="invTable"></div>`)
    +cardHTML('Что закреплено за сотрудником (при увольнении)',`<div class="field" style="max-width:360px"><label>Сотрудник</label><select id="invEmp" onchange="renderMolAssets()"><option value="">—</option>${state.employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div><div id="molAssets"></div>`);
   renderEntTable('asset','invTable');renderMolAssets();
 }
@@ -1171,7 +1195,21 @@ function renderSettings(){
    +dictEd('incomeArticles','Справочник: статьи доходов')
    +dictEd('expenseArticles','Справочник: статьи расходов')
    +dictEd('assetCategories','Справочник: категории имущества')
-   +cardHTML('Импорт сотрудников (CSV)',`<p class="hint" style="margin-top:0">Строки: ФИО;Должность;Подразделение;Оклад;Ставка (разделитель «;»). Подразделение сопоставляется по названию.</p><textarea id="impText" style="width:100%;height:120px;border:1px solid var(--line);border-radius:8px;padding:8px" placeholder="Иванов И.И.;Специалист;Отдел организации учебного процесса;220000;1"></textarea><div style="margin-top:8px">${canEdit()?'<button class="btn sm" onclick="importEmployeesCSV()">Импортировать</button>':'<span class="hint">Только просмотр</span>'}</div>`)
+   +dictEd('programLevels','Справочник: уровни программ')
+   +dictEd('roomTypes','Справочник: типы аудиторий')
+   +cardHTML('Импорт данных по шаблону',`<p class="hint" style="margin-top:0">Выберите раздел: скачайте шаблон (CSV), заполните в Excel/Sheets, загрузите — записи встают прямо в базу. Ссылки (подразделение, программа, корпус) сопоставляются по названию.</p><div style="display:flex;gap:8px;flex-wrap:wrap">
+     <button class="btn ghost sm" onclick="openImport('units')">Структура</button>
+     <button class="btn ghost sm" onclick="openImport('employees')">Штат</button>
+     <button class="btn ghost sm" onclick="openImport('contingent')">Контингент</button>
+     <button class="btn ghost sm" onclick="openImport('program')">Обр. программы</button>
+     <button class="btn ghost sm" onclick="openImport('building')">Корпуса</button>
+     <button class="btn ghost sm" onclick="openImport('room')">Аудитории</button>
+     <button class="btn ghost sm" onclick="openImport('asset')">Инвентарь</button>
+     <button class="btn ghost sm" onclick="openImport('income')">Доходы</button>
+     <button class="btn ghost sm" onclick="openImport('expense')">Расходы</button>
+     <button class="btn ghost sm" onclick="openImport('load')">Нагрузка</button>
+     <button class="btn ghost sm" onclick="openImport('hourlyRate')">Почас. ставки</button>
+   </div>`)
    +cardHTML('Синхронизация и выгрузки',`<button class="btn ghost sm" onclick="openSyncModal()">🔧 Синхронизация (Google Таблица)</button> <button class="btn ghost sm" onclick="exportJSON()">⬇ Экспорт JSON</button> <button class="btn ghost sm" onclick="exportCSV()">⬇ CSV сотрудников</button>`)
    +cardHTML('Журнал изменений (аудит)',`<div id="auditTable"></div>`);
   renderAudit();
@@ -1187,6 +1225,147 @@ function importEmployeesCSV(){
     let unitId='';if(unit){const u=state.units.find(x=>x.name.trim().toLowerCase()===unit.trim().toLowerCase()||unitPath(x.id).toLowerCase().indexOf(unit.trim().toLowerCase())>=0);if(u)unitId=u.id}
     state.employees.push({id:uid(),name:(fio||'').trim(),position:(pos||'').trim(),unitId,oklad:+ok||0,rate:+rate||1,supplements:[]});n++;});
   logAudit('импорт','Сотрудники',n+' строк');save();renderAll();renderSettings();toast('Импортировано: '+n);
+}
+
+/* ================= TEMPLATE IMPORT ENGINE ================= */
+function progContingent(pid){return state.contingent.filter(c=>c.programId===pid).reduce((s,c)=>s+(+c.count||0),0)}
+function impBtn(key){return canEdit()?`<button class="btn ghost sm" onclick="openImport('${key}')">⤓ Импорт</button>`:''}
+function importSpec(key){
+  if(key==='units')return{coll:'units',title:'Структура (подразделения)',defaults:{},cols:[
+    {k:'name',l:'Наименование',req:1},{k:'parentId',l:'Родитель (имя, можно пусто)',ref:'unit'},{k:'head',l:'Руководитель (должность)'}]};
+  if(key==='employees')return{coll:'employees',title:'Штат (сотрудники)',defaults:{supplements:[]},cols:[
+    {k:'name',l:'ФИО',req:1},{k:'position',l:'Должность',req:1},{k:'unitId',l:'Подразделение (имя)',ref:'unit'},
+    {k:'oklad',l:'Оклад',num:1},{k:'rate',l:'Ставка',num:1}]};
+  const cfg=ENT[key];if(!cfg)return null;
+  const cols=cfg.fields.map(f=>({k:f.k,l:f.l,req:f.req,num:f.t==='number',dict:f.t==='dict'?f.dict:null,
+    ref:f.t==='refEmp'?'emp':f.t==='refUnit'?'unit':f.t==='refProgram'?'program':f.t==='refBuilding'?'building':null}));
+  return{coll:cfg.coll,title:cfg.title,defaults:{},cols};
+}
+function resolveRef(type,val){
+  const s=String(val==null?'':val).trim().toLowerCase();if(!s)return '';
+  if(type==='unit'){const u=state.units.find(x=>(x.name||'').trim().toLowerCase()===s||unitPath(x.id).toLowerCase()===s||unitPath(x.id).toLowerCase().endsWith(s));return u?u.id:null}
+  if(type==='emp'){const e=state.employees.find(x=>(x.name||'').trim().toLowerCase()===s);return e?e.id:null}
+  if(type==='program'){const p=state.programs.find(x=>(x.code||'').toLowerCase()===s||(x.name||'').toLowerCase()===s);return p?p.id:null}
+  if(type==='building'){const b=state.buildings.find(x=>(x.name||'').trim().toLowerCase()===s);return b?b.id:null}
+  return null;
+}
+function displayImp(c,v){if(c.ref==='unit')return unitPath(v);if(c.ref==='emp')return empName(v);if(c.ref==='program'){const p=state.programs.find(x=>x.id===v);return p?(p.code||p.name):''}if(c.ref==='building'){const b=state.buildings.find(x=>x.id===v);return b?b.name:''}return v;}
+function parseDelimited(text){
+  const lines=String(text||'').replace(/\r/g,'').split('\n').filter(l=>l.trim()!=='');
+  if(!lines.length)return [];
+  const delim=lines[0].indexOf(';')>=0?';':(lines[0].indexOf('\t')>=0?'\t':',');
+  return lines.map(l=>l.split(delim).map(c=>c.trim().replace(/^"(.*)"$/,'$1')));
+}
+function importCompute(){
+  const spec=importSpec(window._impKey);const res={valid:[],preview:[]};if(!spec)return res;
+  const rows=parseDelimited((document.getElementById('impArea')||{}).value||'');
+  if(!rows.length)return res;
+  let start=0,map=spec.cols.map((c,i)=>i);
+  const first=rows[0].map(x=>x.toLowerCase());
+  if(spec.cols.some(c=>first.indexOf(c.l.toLowerCase())>=0)){start=1;map=spec.cols.map(c=>first.indexOf(c.l.toLowerCase()));}
+  for(let r=start;r<rows.length;r++){
+    const row=rows[r],obj=Object.assign({id:uid()},spec.defaults||{}),errs=[],warns=[];
+    spec.cols.forEach((c,ci)=>{
+      const idx=map[ci];let v=(idx>=0&&idx<row.length)?row[idx]:'';v=(v==null?'':String(v)).trim();
+      if(c.req&&!v)errs.push('нет «'+c.l+'»');
+      if(c.num){v=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));if(isNaN(v))v=0;}
+      if(c.dict&&v&&state.dict[c.dict]&&state.dict[c.dict].indexOf(v)<0)warns.push('«'+v+'» нет в справочнике');
+      if(c.ref){if(v){const id=resolveRef(c.ref,v);if(id==null){errs.push('не найдено: '+c.l+'=«'+v+'»');v='';}else v=id;}else v='';}
+      obj[c.k]=v;
+    });
+    res.preview.push({obj,errs,warns});
+    if(!errs.length)res.valid.push(obj);
+  }
+  return res;
+}
+function importCheck(){
+  const spec=importSpec(window._impKey),res=importCompute();window._impValid=res.valid;
+  const prev=document.getElementById('impPrev');if(!prev)return;
+  if(!res.preview.length){prev.innerHTML='<div class="hint">Нет строк. Вставьте данные или загрузите CSV.</div>';return;}
+  const rowsHtml=res.preview.map(p=>{
+    const st=p.errs.length?'✗':(p.warns.length?'⚠':'✓'),col=p.errs.length?'var(--danger)':(p.warns.length?'#c98a00':'var(--good)');
+    const info=[...p.errs,...p.warns].join('; ');
+    const cells=spec.cols.slice(0,4).map(c=>`<td>${esc(String(displayImp(c,p.obj[c.k])||''))}</td>`).join('');
+    return `<tr><td style="color:${col};font-weight:700">${st}</td>${cells}<td class="hint">${esc(info)}</td></tr>`;
+  }).join('');
+  prev.innerHTML=`<div class="hint" style="margin-bottom:6px">Корректных строк: <b>${res.valid.length}</b> из ${res.preview.length}. Кнопка «Сохранить» импортирует корректные.</div><div class="table-wrap" style="max-height:260px;overflow:auto"><table><thead><tr><th></th>${spec.cols.slice(0,4).map(c=>`<th>${esc(c.l)}</th>`).join('')}<th>Замечания</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+}
+function importApply(){
+  if(!canEdit())return toast('Роль только для просмотра');
+  const spec=importSpec(window._impKey),res=importCompute();
+  if(!res.valid.length){importCheck();return toast('Нет корректных строк');}
+  res.valid.forEach(o=>state[spec.coll].push(o));
+  logAudit('импорт',spec.title,res.valid.length+' строк');
+  save();closeModal();renderAll();
+  const a=document.querySelector('#tabs button.active');if(a){if(a.dataset.tab==='tariff')renderTariff();if(a.dataset.tab==='settings')renderSettings();}
+  toast('Импортировано: '+res.valid.length);
+}
+function downloadTemplate(key){
+  const spec=importSpec(key);if(!spec)return;
+  const headers=spec.cols.map(c=>c.l).join(';');
+  const ex=spec.cols.map(c=>c.ref?'(имя из системы)':(c.num?'0':(c.dict&&state.dict[c.dict]?state.dict[c.dict][0]:''))).join(';');
+  const csv='\ufeff'+headers+'\n'+ex+'\n';
+  try{const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='template_'+key+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}catch(e){toast('Не удалось скачать')}
+}
+function impFile(ev){const f=ev.target.files&&ev.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const ta=document.getElementById('impArea');if(ta){ta.value=rd.result;importCheck();}};rd.readAsText(f,'utf-8');}
+function openImport(key){
+  const spec=importSpec(key);if(!spec)return;
+  if(!canEdit())return toast('Роль только для просмотра');
+  window._impKey=key;window._impValid=[];
+  const headers=spec.cols.map(c=>c.l).join(';');
+  openModal('Импорт по шаблону · '+spec.title,`
+    <p class="hint" style="margin-top:0">1) Скачайте шаблон → 2) заполните в Excel/Sheets → 3) вставьте сюда или загрузите CSV → 4) «Проверить» → 5) «Сохранить». Разделитель «;», строку-заголовок оставляйте.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn ghost sm" onclick="downloadTemplate('${key}')">⬇ Шаблон CSV</button>
+      <label class="btn ghost sm" style="cursor:pointer">📄 Загрузить CSV<input type="file" accept=".csv,text/csv" style="display:none" onchange="impFile(event)"></label>
+      <button class="btn ghost sm" onclick="importCheck()">Проверить</button>
+    </div>
+    <textarea id="impArea" style="width:100%;height:130px;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:monospace;font-size:12px" placeholder="${esc(headers)}"></textarea>
+    <div id="impPrev" style="margin-top:12px"></div>`, importApply);
+}
+
+/* ---------- EDUCATIONAL PROGRAMS ---------- */
+function renderPrograms(){
+  const c=document.getElementById('progBody');if(!c)return;
+  const byB={};state.programs.forEach(p=>{const b=p.buildingId||'—';byB[b]=(byB[b]||0)+progContingent(p.id)});
+  const capRows=state.buildings.map(b=>{
+    const cont=byB[b.id]||0,rooms=state.rooms.filter(r=>r.buildingId===b.id);
+    const seats=rooms.reduce((s,r)=>s+(+r.seats||0),0);
+    const lect=rooms.filter(r=>(r.type||'').indexOf('Лекц')===0).reduce((s,r)=>s+(+r.seats||0),0);
+    const comp=rooms.reduce((s,r)=>s+(+r.computers||0),0);
+    const load=seats?cont/seats*100:0;
+    return `<tr><td>${esc(b.name)}</td><td class="num">${fmt(cont)}</td><td class="num">${fmt(seats)}</td><td class="num">${fmt(lect)}</td><td class="num">${fmt(comp)}</td><td class="num" style="color:${load>100?'var(--danger)':'inherit'}">${seats?load.toFixed(0)+'%':'—'}</td></tr>`;
+  }).join('');
+  const unassigned=byB['—']||0;
+  const totCont=state.programs.reduce((s,p)=>s+progContingent(p.id),0);
+  c.innerHTML=`<div class="kpis" style="margin-bottom:16px">
+      <div class="kpi"><div class="label">Программ</div><div class="value">${state.programs.length}</div></div>
+      <div class="kpi"><div class="label">Групп привязано</div><div class="value">${state.contingent.filter(x=>x.programId).length}</div><div class="sub">из ${state.contingent.length}</div></div>
+      <div class="kpi accent"><div class="label">Контингент по программам</div><div class="value">${fmt(totCont)}</div></div></div>`
+    +cardHTML('Образовательные программы',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'program\')">＋ Программа</button>':''}${impBtn('program')}</div><div id="progTable"></div><p class="hint">Программа привязывается к кафедре (подразделению) и основному корпусу. Её контингент = сумма групп во вкладке «Контингент», где выбрана эта программа. Через кафедру ОП участвует в калькуляторе ФОТ (сценарий «по подразделению»).</p>`)
+    +cardHTML('Контингент и аудиторный фонд по корпусам',`<div class="table-wrap"><table><thead><tr><th>Корпус</th><th class="num">Контингент</th><th class="num">Всего мест</th><th class="num">Лекц. места</th><th class="num">Комп. места</th><th class="num">Ориент. загрузка</th></tr></thead><tbody>${capRows||'<tr><td colspan="6" class="hint" style="padding:14px">Добавьте корпуса и аудитории во вкладке «Аудиторный фонд».</td></tr>'}${unassigned?`<tr><td class="hint">Не привязано к корпусу</td><td class="num">${fmt(unassigned)}</td><td colspan="4"></td></tr>`:''}</tbody></table></div><p class="hint">Загрузка = контингент / посадочные места (ориентир, без учёта сменности и расписания).</p>`);
+  renderEntTable('program','progTable');
+}
+
+/* ---------- CLASSROOM STOCK ---------- */
+function renderRooms(){
+  const c=document.getElementById('roomBody');if(!c)return;
+  const seats=state.rooms.reduce((s,r)=>s+(+r.seats||0),0),comp=state.rooms.reduce((s,r)=>s+(+r.computers||0),0);
+  const perB=state.buildings.map(b=>{
+    const rs=state.rooms.filter(r=>r.buildingId===b.id),byType={};
+    rs.forEach(r=>{const t=r.type||'Прочее';byType[t]=(byType[t]||0)+1});
+    const types=Object.keys(byType).map(t=>esc(t)+': '+byType[t]).join(', ');
+    return `<tr><td>${esc(b.name)}</td><td class="num">${rs.length}</td><td class="num">${fmt(rs.reduce((s,r)=>s+(+r.seats||0),0))}</td><td class="num">${fmt(rs.reduce((s,r)=>s+(+r.computers||0),0))}</td><td class="hint">${types||'—'}</td></tr>`;
+  }).join('');
+  c.innerHTML=`<div class="kpis" style="margin-bottom:16px">
+      <div class="kpi"><div class="label">Корпусов</div><div class="value">${state.buildings.length}</div></div>
+      <div class="kpi"><div class="label">Аудиторий</div><div class="value">${state.rooms.length}</div></div>
+      <div class="kpi"><div class="label">Посадочных мест</div><div class="value">${fmt(seats)}</div></div>
+      <div class="kpi accent"><div class="label">Компьютерных мест</div><div class="value">${fmt(comp)}</div></div></div>`
+    +cardHTML('Корпуса',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'building\')">＋ Корпус</button>':''}${impBtn('building')}</div><div id="bldTable"></div>`)
+    +cardHTML('Аудитории',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'room\')">＋ Аудитория</button>':''}${impBtn('room')}</div><div id="roomTable"></div>`)
+    +cardHTML('Сводка по корпусам',`<div class="table-wrap"><table><thead><tr><th>Корпус</th><th class="num">Аудиторий</th><th class="num">Мест</th><th class="num">Комп. мест</th><th>По типам</th></tr></thead><tbody>${perB||'<tr><td colspan="5" class="hint" style="padding:14px">Нет данных.</td></tr>'}</tbody></table></div>`);
+  renderEntTable('building','bldTable');renderEntTable('room','roomTable');
 }
 
 /* ================= CLOUD SYNC (Google Sheets + Apps Script) ================= */
