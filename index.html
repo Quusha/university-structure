@@ -8,6 +8,8 @@
 </head>
 <body>
 
+<div id="authGate" class="auth-gate" style="display:none"></div>
+
 <header class="app">
   <div class="logo">Ш</div>
   <div class="titles">
@@ -16,8 +18,8 @@
   </div>
   <div class="spacer"></div>
   <div class="toolbar">
-    <select id="roleSel" onchange="setRole(this.value)" title="Роль (демо-разграничение доступа)"></select>
-    <button class="tb-btn" id="syncChip" onclick="openSyncModal()" title="Синхронизация с Google Таблицей">🔧 Не настроено</button>
+    <span class="tb-btn" id="acctChip" style="display:none" title="Учётная запись"></span>
+    <button class="tb-btn" id="syncChip" onclick="openSyncModal()" title="Подключение и аккаунт">🔧 Локально</button>
     <button class="tb-btn" onclick="exportJSON()">⬇ Экспорт (JSON)</button>
     <button class="tb-btn" onclick="document.getElementById('importFile').click()">⬆ Импорт</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
@@ -49,6 +51,7 @@
   <button data-tab="inventory">📦 Инвентарь</button>
   <button data-tab="plan">🗺 План развития</button>
   <button data-tab="settings">⚙ Настройки</button>
+  <button data-tab="admin">📋 Пользователи</button>
 </nav>
 
 <main>
@@ -173,6 +176,7 @@
   <section class="tab" id="tab-programs"><div id="progBody"></div></section>
   <section class="tab" id="tab-rooms"><div id="roomBody"></div></section>
   <section class="tab" id="tab-settings"><div id="setBody"></div></section>
+  <section class="tab" id="tab-admin"><div id="adminBody"></div></section>
 </main>
 
 <div class="overlay" id="overlay">
@@ -185,6 +189,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="config.js"></script>
 <script src="state.js"></script>
 <script src="helpers.js"></script>
 <script src="accruals.js"></script>
@@ -210,6 +215,8 @@
 <script src="programs.js"></script>
 <script src="rooms.js"></script>
 <script src="sync.js"></script>
+<script src="auth.js"></script>
+<script src="admin.js"></script>
 <script src="init.js"></script>
 
 </body>
