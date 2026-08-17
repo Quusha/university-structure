@@ -22,4 +22,3 @@ function treeNode(u){
 }
 function toggleCollapse(id){collapsed.has(id)?collapsed.delete(id):collapsed.add(id);renderTree()}
 function expandAll(expand){collapsed=new Set();if(!expand)state.units.forEach(u=>{if(childrenOf(u.id).length)collapsed.add(u.id)});renderTree()}
-
