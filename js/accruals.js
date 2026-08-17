@@ -45,4 +45,3 @@ function renderAccruals(){
       <div class="bar-track"><div class="bar-fill" style="width:${(b.val/max*100).toFixed(1)}%"></div></div>
       <div class="bar-val">${money(b.val)}</div></div>`).join(''):'<div class="hint">Включите начисления и добавьте сотрудников с окладами.</div>';
 }
-
