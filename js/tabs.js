@@ -14,4 +14,3 @@ document.querySelectorAll('#tabs button').forEach(b=>{
     if(t==='admin')renderAdmin();
   };
 });
-
