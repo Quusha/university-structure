@@ -40,4 +40,3 @@ function importEmployeesCSV(){
     state.employees.push({id:uid(),name:(fio||'').trim(),position:(pos||'').trim(),unitId,oklad:+ok||0,rate:+rate||1,supplements:[]});n++;});
   logAudit('импорт','Сотрудники',n+' строк');save();renderAll();renderSettings();toast('Импортировано: '+n);
 }
-
