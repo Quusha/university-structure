@@ -8,4 +8,3 @@ function exportCSV(){
   const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='employees.csv';a.click();toast('CSV выгружен');
 }
 function clearAll(){if(!confirm('Удалить ВСЕ подразделения и сотрудников? Сделайте экспорт для резервной копии.'))return;state={units:[],employees:[],accruals:defaultAccruals(),settings:{period:state.settings.period,startDate:state.settings.startDate}};collapsed=new Set();ocCollapsed=new Set();ensureShape();save();renderAll();toast('Очищено')}
-
