@@ -41,4 +41,3 @@ function assetMove(id){
      save();closeModal();renderInventory();toast('Операция записана');
    });
 }
-
