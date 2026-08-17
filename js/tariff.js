@@ -17,4 +17,3 @@ function tariffCompare(){
     return `<tr><td>${esc(e.name)}</td><td>${esc(e.position)}</td><td class="num">${fmt(hours)}</td><td class="num">${money(hourly)}</td><td class="num">${money(okladYear)}</td><td><span class="pill">${cheaper}</span></td></tr>`}).join('');
   const c=document.getElementById('tfCompare');if(c)c.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Преподаватель</th><th>Должность</th><th class="num">Часы</th><th class="num">Почасовая, ₸</th><th class="num">Оклад/год, ₸</th><th>Выгоднее</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="hint" style="padding:16px">Внесите нагрузку с привязкой к преподавателям.</td></tr>'}</tbody></table></div>`;
 }
-
