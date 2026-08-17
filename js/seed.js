@@ -47,4 +47,3 @@ function buildSeed(){
   ex.forEach(([un,name,pos,ok,rate,supp])=>{const u=find(un);if(u)employees.push({id:uid(),name,position:pos,oklad:ok,rate,unitId:u.id,supplements:supp})});
   state={units,employees,accruals:defaultAccruals(),settings:{period:'month',startDate:new Date().getFullYear()+'-01-01'}};
 }
-
