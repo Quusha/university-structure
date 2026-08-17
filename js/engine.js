@@ -114,4 +114,3 @@ function renderEntTable(key,containerId){
   }).join('');
   c.innerHTML=`<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${rows||'<tr><td colspan="20" class="hint" style="padding:18px">Нет записей.</td></tr>'}</tbody></table></div>`;
 }
-
