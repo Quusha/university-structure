@@ -247,3 +247,25 @@ body.local-mode #acctChip{display:none!important}
   .usr-id{grid-column:1 / -1}
   .usr-act{grid-column:2;text-align:right}
 }
+
+/* ================= ORG CHART · гибрид (колонки + вложенные списки) ================= */
+.oc-columns{display:flex;flex-direction:row;align-items:flex-start;justify-content:flex-start;gap:20px;padding-top:26px;position:relative}
+.oc-columns::before{content:'';position:absolute;top:0;left:50%;width:1.6px;height:26px;background:var(--box-line)}
+.oc-columns::after{content:'';position:absolute;top:26px;left:105px;right:105px;height:1.6px;background:var(--box-line)}
+.oc-columns-root{justify-content:center}
+.oc-columns-root::before{display:none}
+.oc-column{position:relative;display:flex;flex-direction:column;align-items:stretch;width:214px;flex:0 0 auto}
+.oc-column::before{content:'';position:absolute;top:-12px;left:50%;width:1.6px;height:12px;background:var(--box-line)}
+.oc-columns-root>.oc-column::before{display:none}
+.oc-column>.oc-node{width:100%;box-sizing:border-box;min-width:0}
+.oc-col{display:flex;flex-direction:column;gap:7px;margin-top:14px;position:relative;padding-left:14px}
+.oc-col::before{content:'';position:absolute;left:3px;top:-14px;bottom:16px;width:1.6px;background:var(--box-line)}
+.oc-colitem{position:relative}
+.oc-colitem>.oc-node{width:100%;box-sizing:border-box;min-width:0}
+.oc-colitem::before{content:'';position:absolute;left:-11px;top:16px;width:11px;height:1.6px;background:var(--box-line)}
+.oc-col.oc-sub{margin-top:7px;margin-left:8px;padding-left:14px}
+.oc-col.oc-sub::before{top:-7px;bottom:16px}
+/* в колонках выравниваем по левому краю — читается как в образце */
+.oc-column .oc-top,.oc-col .oc-top{justify-content:flex-start;text-align:left}
+.oc-column .oc-node,.oc-col .oc-node{text-align:left}
+.oc-columns .lvltag,.oc-col .lvltag{left:8px}
