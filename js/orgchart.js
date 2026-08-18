@@ -25,34 +25,6 @@ function initOrgChart(){
   });
 }
 
-/* первый уровень с ветвлением = уровень колонок (для режима «авто») */
-function ocAutoSplit(){
-  let level=rootUnits(),d=0;
-  if(level.length!==1)return 0;
-  while(level.length===1){const kids=childrenOf(level[0].id);if(!kids.length)break;level=kids;d++;}
-  return d;
-}
-function ocColDepth(){ return ocSplitMode==='auto'?ocAutoSplit():Math.max(0,(+ocSplitMode)-1); }
-
-function renderOrgChart(){
-  const canvas=document.getElementById('ocCanvas');
-  const roots=rootUnits();
-  if(!roots.length){canvas.innerHTML='<div class="empty-state" style="border:none"><div class="big">🏛</div>Постройте структуру во вкладке «Структура».</div>';ocApply();return}
-  const showM=document.getElementById('ocMetrics').checked;
-  const colDepth=ocColDepth();
-  canvas.innerHTML='';
-  if(colDepth<=0){
-    const cols=document.createElement('div');cols.className='oc-columns oc-columns-root';
-    roots.forEach(u=>cols.appendChild(ocColumn(u,0,showM)));
-    canvas.appendChild(cols);
-  }else{
-    const ul=document.createElement('ul');ul.className='oc-tree';
-    roots.forEach(u=>ul.appendChild(ocTrunk(u,0,colDepth,showM)));
-    canvas.appendChild(ul);
-  }
-  ocApply();
-}
-
 /* коробка узла */
 function ocBox(u,lvl,showM){
   const kids=childrenOf(u.id),isColl=ocCollapsed.has(u.id);
@@ -65,46 +37,104 @@ function ocBox(u,lvl,showM){
   return box;
 }
 
-/* ствол — сверху-вниз, пока не дойдём до уровня колонок */
+/* ---------- ЗОНАЛЬНЫЙ РЕНДЕР (как в оргструктуре) ---------- */
+function ocPath(t){const p=[];let c=t;while(c){p.unshift(c);c=c.parentId?unitById(c.parentId):null}return p}
+function ocIsSchool(u){const s=((u.type||'')+' '+(u.name||''));return /школ|колледж|school|лицей/i.test(s)}
+/* узел с наибольшим «ветвлением» (его линейные потомки станут колонками) = обычно Ректор */
+function ocFanoutNode(){
+  let best=null,bestScore=1,bestLvl=1e9;
+  state.units.forEach(u=>{
+    const branching=childrenOf(u.id).filter(k=>childrenOf(k.id).length&&!ocIsSchool(k)).length;
+    const lv=levelOf(u.id);
+    if(branching>bestScore||(branching===bestScore&&lv<bestLvl)){bestScore=branching;best=u;bestLvl=lv}
+  });
+  return bestScore>=2?best:null;
+}
+function ocSideBox(u,showM){const w=document.createElement('div');w.className='oc-sidebox';w.appendChild(ocBox(u,levelOf(u.id),showM));return w}
+function ocSpineRow(node,sides,showM){
+  const row=document.createElement('div');row.className='oc-spinerow';
+  const left=document.createElement('div');left.className='oc-side left';
+  const right=document.createElement('div');right.className='oc-side right';
+  const half=Math.ceil(sides.length/2);
+  sides.slice(0,half).forEach(s=>left.appendChild(ocSideBox(s,showM)));
+  sides.slice(half).forEach(s=>right.appendChild(ocSideBox(s,showM)));
+  const center=document.createElement('div');center.className='oc-spinecenter';
+  center.appendChild(ocBox(node,levelOf(node.id),showM));
+  row.appendChild(left);row.appendChild(center);row.appendChild(right);
+  return row;
+}
+function ocFaithful(root,cp,showM){
+  const wrap=document.createElement('div');wrap.className='oc-faithful';
+  const spine=ocPath(cp);                       // [root ... cp]
+  for(let i=0;i<spine.length-1;i++){
+    const n=spine[i],next=spine[i+1];
+    const sides=ocCollapsed.has(n.id)?[]:childrenOf(n.id).filter(c=>c.id!==next.id);
+    wrap.appendChild(ocSpineRow(n,sides,showM));
+    wrap.appendChild(ocConnector());
+  }
+  const kids=ocCollapsed.has(cp.id)?[]:childrenOf(cp.id);
+  const schools=kids.filter(ocIsSchool);
+  const columns=kids.filter(k=>!ocIsSchool(k)&&childrenOf(k.id).length);
+  const staff=kids.filter(k=>!ocIsSchool(k)&&!childrenOf(k.id).length);
+  wrap.appendChild(ocSpineRow(cp,staff,showM));
+  if(columns.length){
+    wrap.appendChild(ocConnector());
+    const cols=document.createElement('div');cols.className='oc-columns oc-columns-root';
+    columns.forEach(c=>cols.appendChild(ocColumn(c,levelOf(c.id),showM)));
+    wrap.appendChild(cols);
+  }
+  if(schools.length){
+    wrap.appendChild(ocConnector());
+    const band=document.createElement('div');band.className='oc-band';
+    schools.forEach(s=>band.appendChild(ocColumn(s,levelOf(s.id),showM)));
+    wrap.appendChild(band);
+  }
+  return wrap;
+}
+function ocConnector(){const c=document.createElement('div');c.className='oc-vconn';return c}
+
+/* ---------- запасной режим: колонки по уровню (ручной override) ---------- */
+function ocAutoSplit(){let level=rootUnits(),d=0;if(level.length!==1)return 0;while(level.length===1){const kids=childrenOf(level[0].id);if(!kids.length)break;level=kids;d++}return d}
+function ocColDepth(){return ocSplitMode==='auto'?ocAutoSplit():Math.max(0,(+ocSplitMode)-1)}
 function ocTrunk(u,lvl,colDepth,showM){
-  const li=document.createElement('li');
-  li.appendChild(ocBox(u,lvl,showM));
+  const li=document.createElement('li');li.appendChild(ocBox(u,lvl,showM));
   const kids=childrenOf(u.id);
   if(kids.length&&!ocCollapsed.has(u.id)){
-    if(lvl+1<colDepth){
-      const ul=document.createElement('ul');
-      kids.forEach(c=>ul.appendChild(ocTrunk(c,lvl+1,colDepth,showM)));
-      li.appendChild(ul);
-    }else{
-      const cols=document.createElement('div');cols.className='oc-columns';
-      kids.forEach(c=>cols.appendChild(ocColumn(c,lvl+1,showM)));
-      li.appendChild(cols);
-    }
+    if(lvl+1<colDepth){const ul=document.createElement('ul');kids.forEach(c=>ul.appendChild(ocTrunk(c,lvl+1,colDepth,showM)));li.appendChild(ul);}
+    else{const cols=document.createElement('div');cols.className='oc-columns';kids.forEach(c=>cols.appendChild(ocColumn(c,lvl+1,showM)));li.appendChild(cols);}
   }
   return li;
 }
-
-/* колонка: заголовок сверху, подчинённые — вертикальным списком */
 function ocColumn(u,lvl,showM){
-  const col=document.createElement('div');col.className='oc-column';
-  col.appendChild(ocBox(u,lvl,showM));
+  const col=document.createElement('div');col.className='oc-column';col.appendChild(ocBox(u,lvl,showM));
   const kids=childrenOf(u.id);
-  if(kids.length&&!ocCollapsed.has(u.id)){
-    const v=document.createElement('div');v.className='oc-col';
-    kids.forEach(c=>v.appendChild(ocColItem(c,lvl+1,showM)));
-    col.appendChild(v);
-  }
+  if(kids.length&&!ocCollapsed.has(u.id)){const v=document.createElement('div');v.className='oc-col';kids.forEach(c=>v.appendChild(ocColItem(c,lvl+1,showM)));col.appendChild(v);}
   return col;
 }
-/* элемент вертикального списка (+ вложенные с отступом: отделы, кафедры и т.д.) */
 function ocColItem(u,lvl,showM){
-  const wrap=document.createElement('div');wrap.className='oc-colitem';
-  wrap.appendChild(ocBox(u,lvl,showM));
+  const wrap=document.createElement('div');wrap.className='oc-colitem';wrap.appendChild(ocBox(u,lvl,showM));
   const kids=childrenOf(u.id);
-  if(kids.length&&!ocCollapsed.has(u.id)){
-    const sub=document.createElement('div');sub.className='oc-col oc-sub';
-    kids.forEach(c=>sub.appendChild(ocColItem(c,lvl+1,showM)));
-    wrap.appendChild(sub);
-  }
+  if(kids.length&&!ocCollapsed.has(u.id)){const sub=document.createElement('div');sub.className='oc-col oc-sub';kids.forEach(c=>sub.appendChild(ocColItem(c,lvl+1,showM)));wrap.appendChild(sub);}
   return wrap;
+}
+
+function renderOrgChart(){
+  const canvas=document.getElementById('ocCanvas');
+  const roots=rootUnits();
+  if(!roots.length){canvas.innerHTML='<div class="empty-state" style="border:none"><div class="big">🏛</div>Постройте структуру во вкладке «Структура».</div>';ocApply();return}
+  const showM=document.getElementById('ocMetrics').checked;
+  canvas.innerHTML='';
+  const cp=ocFanoutNode();
+  if(ocSplitMode==='auto'&&roots.length===1&&cp){          // зональный режим — как на образце
+    canvas.appendChild(ocFaithful(roots[0],cp,showM));ocApply();return;
+  }
+  const colDepth=ocColDepth();                              // запасной режим (ручной уровень / нестандартные данные)
+  if(colDepth<=0){
+    const cols=document.createElement('div');cols.className='oc-columns oc-columns-root';
+    roots.forEach(u=>cols.appendChild(ocColumn(u,0,showM)));canvas.appendChild(cols);
+  }else{
+    const ul=document.createElement('ul');ul.className='oc-tree';
+    roots.forEach(u=>ul.appendChild(ocTrunk(u,0,colDepth,showM)));canvas.appendChild(ul);
+  }
+  ocApply();
 }
