@@ -41,7 +41,7 @@ function importCompute(){
       if(c.req&&!v)errs.push('нет «'+c.l+'»');
       if(c.num){v=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));if(isNaN(v))v=0;}
       if(c.dict&&v&&state.dict[c.dict]&&state.dict[c.dict].indexOf(v)<0)warns.push('«'+v+'» нет в справочнике');
-      if(c.ref){if(v){const id=resolveRef(c.ref,v);if(id==null){errs.push('не найдено: '+c.l+'=«'+v+'»');v='';}else v=id;}else v='';}
+      if(c.ref){if(v){const id=resolveRef(c.ref,v);if(id==null){(c.req?errs:warns).push((c.req?'не найдено: ':'не связано (нет в базе): ')+c.l+'=«'+v+'»');v='';}else v=id;}else v='';}
       obj[c.k]=v;
     });
     res.preview.push({obj,errs,warns});
