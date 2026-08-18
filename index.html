@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0045)file:///C:/Users/dace3/Downloads/index_6.html -->
-<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="ru">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Конструктор структуры университета</title>
-<link rel="stylesheet" href="file:///C:/Users/dace3/Downloads/styles.css">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -21,7 +21,7 @@
     <span class="tb-btn" id="acctChip" style="display:none" title="Учётная запись"></span>
     <button class="tb-btn" id="syncChip" onclick="openSyncModal()" title="Подключение и аккаунт">🔧 Локально</button>
     <button class="tb-btn" onclick="exportJSON()">⬇ Экспорт (JSON)</button>
-    <button class="tb-btn" onclick="document.getElementById(&#39;importFile&#39;).click()">⬆ Импорт</button>
+    <button class="tb-btn" onclick="document.getElementById('importFile').click()">⬆ Импорт</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
     <button class="tb-btn" onclick="exportCSV()">⬇ CSV</button>
     <button class="tb-btn" onclick="window.print()">🖨 Печать</button>
@@ -31,8 +31,8 @@
 
 <div class="conflict-banner" id="conflictBanner">
   <span>⚠️ <b>Данные изменены на сервере</b> (другой ноутбук сохранил свою версию). Выберите, что оставить:</span>
-  <button class="btn ghost sm" onclick="resolveConflict(&#39;server&#39;)">Взять серверную версию</button>
-  <button class="btn danger sm" onclick="resolveConflict(&#39;mine&#39;)">Перезаписать моей версией</button>
+  <button class="btn ghost sm" onclick="resolveConflict('server')">Взять серверную версию</button>
+  <button class="btn danger sm" onclick="resolveConflict('mine')">Перезаписать моей версией</button>
 </div>
 
 <nav class="tabs" id="tabs">
@@ -61,7 +61,7 @@
       <div class="hd"><h2>Дерево подразделений</h2><div class="spacer"></div>
         <button class="btn ghost sm" onclick="expandAll(true)">Развернуть</button>
         <button class="btn ghost sm" onclick="expandAll(false)">Свернуть</button>
-        <button class="btn ghost sm" onclick="openImport(&#39;units&#39;)">⤓ Импорт</button>
+        <button class="btn ghost sm" onclick="openImport('units')">⤓ Импорт</button>
         <button class="btn sm" onclick="openUnitModal()">＋ Подразделение</button></div>
       <div class="bd">
         <p class="hint" style="margin-top:0">Наведите на подразделение — добавить дочернее / сотрудника, редактировать, удалить. Цифры справа: сотрудники / ставки / ФОТ с доплатами (включая вложенные подразделения).</p>
@@ -90,7 +90,7 @@
             <select id="ocSplit" onchange="ocSetSplit(this.value)" style="padding:5px 7px;border:1px solid var(--line);border-radius:7px">
               <option value="auto">авто</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
           <label class="hint" style="display:flex;align-items:center;gap:5px">
-            <input type="checkbox" id="ocMetrics" checked="" onchange="renderOrgChart()"> метрики</label>
+            <input type="checkbox" id="ocMetrics" checked onchange="renderOrgChart()"> метрики</label>
         </div></div>
       <div class="bd" style="padding:0">
         <div class="oc-viewport" id="ocViewport"><div class="oc-canvas" id="ocCanvas"></div></div>
@@ -107,7 +107,7 @@
           <input type="text" id="empSearch" placeholder="Поиск: ФИО / должность…" oninput="renderEmployees()">
           <select id="empUnitFilter" onchange="renderEmployees()"></select>
         </div>
-        <button class="btn ghost sm" onclick="openImport(&#39;employees&#39;)">⤓ Импорт</button>
+        <button class="btn ghost sm" onclick="openImport('employees')">⤓ Импорт</button>
         <button class="btn sm" onclick="openEmpModal()">＋ Сотрудник</button></div>
       <div class="bd">
         <div class="table-wrap"><table>
@@ -192,36 +192,35 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="file:///C:/Users/dace3/Downloads/js/config.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/state.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/helpers.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/accruals.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/tabs.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/structure.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/orgchart.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/employees.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/modals.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/analytics.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/data-io.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/render-all.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/seed.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/engine.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/dashboard.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/calc.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/tariff.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/budget.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/contingent.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/inventory.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/plan.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/settings.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/import.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/programs.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/rooms.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/sync.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/auth.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/admin.js"></script>
-<script src="file:///C:/Users/dace3/Downloads/js/init.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/accruals.js"></script>
+<script src="js/tabs.js"></script>
+<script src="js/structure.js"></script>
+<script src="js/orgchart.js"></script>
+<script src="js/employees.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/data-io.js"></script>
+<script src="js/render-all.js"></script>
+<script src="js/seed.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/tariff.js"></script>
+<script src="js/budget.js"></script>
+<script src="js/contingent.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/plan.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/import.js"></script>
+<script src="js/programs.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/init.js"></script>
 
-
-
-</body></html>
+</body>
+</html>
