@@ -269,3 +269,24 @@ body.local-mode #acctChip{display:none!important}
 .oc-column .oc-top,.oc-col .oc-top{justify-content:flex-start;text-align:left}
 .oc-column .oc-node,.oc-col .oc-node{text-align:left}
 .oc-columns .lvltag,.oc-col .lvltag{left:8px}
+
+/* ================= ORG CHART · зональный режим (как в оргструктуре) ================= */
+.oc-faithful{display:flex;flex-direction:column;align-items:center}
+.oc-vconn{width:1.6px;height:20px;background:var(--box-line)}
+.oc-spinerow{display:flex;align-items:center;justify-content:center;gap:22px;position:relative}
+.oc-spinerow .oc-side{display:flex;flex-direction:column;gap:8px;justify-content:center}
+.oc-spinerow .oc-side.left{align-items:flex-end}
+.oc-spinerow .oc-side.right{align-items:flex-start}
+.oc-spinerow .oc-side:empty{width:0;gap:0}
+.oc-spinecenter{display:flex;flex-direction:column;align-items:center}
+.oc-spinecenter>.oc-node{min-width:210px;text-align:center}
+.oc-sidebox>.oc-node{min-width:180px;max-width:230px}
+/* горизонтальная связка от ствола к боковым */
+.oc-spinerow .oc-side.left::after{content:'';position:absolute;left:calc(50% - 130px);top:50%;width:0}
+/* нижняя лента (школы/колледжи) */
+.oc-band{display:flex;flex-direction:row;justify-content:center;align-items:flex-start;gap:18px;flex-wrap:wrap;
+  border-top:2px dashed var(--line);padding-top:18px;margin-top:2px;max-width:1180px}
+.oc-band .oc-column{width:220px}
+/* колонки внутри зонального вида — крупнее заголовок */
+.oc-faithful .oc-columns{gap:18px;flex-wrap:wrap;max-width:1280px}
+.oc-faithful .oc-columns::before,.oc-faithful .oc-columns::after{display:none}
