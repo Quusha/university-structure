@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конструктор структуры университета</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="authGate" class="auth-gate" style="display:none"></div>
+
+<header class="app">
+  <div class="logo">Ш</div>
+  <div class="titles">
+    <h1>Конструктор организационной структуры</h1>
+    <p>Подразделения · сотрудники · оклады и доплаты · начисления · аналитика</p>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar">
+    <span class="tb-btn" id="acctChip" style="display:none" title="Учётная запись"></span>
+    <button class="tb-btn" id="syncChip" onclick="openSyncModal()" title="Подключение и аккаунт">🔧 Локально</button>
+    <button class="tb-btn" onclick="exportJSON()">⬇ Экспорт (JSON)</button>
+    <button class="tb-btn" onclick="document.getElementById('importFile').click()">⬆ Импорт</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+    <button class="tb-btn" onclick="exportCSV()">⬇ CSV</button>
+    <button class="tb-btn" onclick="window.print()">🖨 Печать</button>
+    <button class="tb-btn danger" onclick="clearAll()">Очистить</button>
+  </div>
+</header>
+
+<div class="conflict-banner" id="conflictBanner">
+  <span>⚠️ <b>Данные изменены на сервере</b> (другой ноутбук сохранил свою версию). Выберите, что оставить:</span>
+  <button class="btn ghost sm" onclick="resolveConflict('server')">Взять серверную версию</button>
+  <button class="btn danger sm" onclick="resolveConflict('mine')">Перезаписать моей версией</button>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="dashboard" class="active">🏠 Панель</button>
+  <button data-tab="structure">🗂 Структура</button>
+  <button data-tab="orgchart">🏛 Оргсхема</button>
+  <button data-tab="employees">👥 Штат</button>
+  <button data-tab="accruals">💳 Начисления</button>
+  <button data-tab="analytics">📊 Аналитика ФОТ</button>
+  <button data-tab="calc">🧮 Калькулятор</button>
+  <button data-tab="tariff">⏱ Тарификация</button>
+  <button data-tab="budget">💰 Бюджет</button>
+  <button data-tab="contingent">🎓 Контингент</button>
+  <button data-tab="programs">📚 Обр. программы</button>
+  <button data-tab="rooms">🏫 Аудиторный фонд</button>
+  <button data-tab="inventory">📦 Инвентарь</button>
+  <button data-tab="plan">🗺 План развития</button>
+  <button data-tab="settings">⚙ Настройки</button>
+  <button data-tab="admin">📋 Пользователи</button>
+</nav>
+
+<main>
+  <!-- STRUCTURE -->
+  <section class="tab" id="tab-structure">
+    <div class="card">
+      <div class="hd"><h2>Дерево подразделений</h2><div class="spacer"></div>
+        <button class="btn ghost sm" onclick="expandAll(true)">Развернуть</button>
+        <button class="btn ghost sm" onclick="expandAll(false)">Свернуть</button>
+        <button class="btn ghost sm" onclick="openImport('units')">⤓ Импорт</button>
+        <button class="btn sm" onclick="openUnitModal()">＋ Подразделение</button></div>
+      <div class="bd">
+        <p class="hint" style="margin-top:0">Наведите на подразделение — добавить дочернее / сотрудника, редактировать, удалить. Цифры справа: сотрудники / ставки / ФОТ с доплатами (включая вложенные подразделения).</p>
+        <ul class="tree" id="treeRoot"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ORG CHART -->
+  <section class="tab" id="tab-orgchart">
+    <div class="card">
+      <div class="hd"><h2>Визуальная оргсхема</h2><div class="spacer"></div>
+        <div class="oc-controls">
+          <button class="btn ghost sm" onclick="ocZoomBtn(-1)" title="Уменьшить">−</button>
+          <span id="ocPct" class="pill">100%</span>
+          <button class="btn ghost sm" onclick="ocZoomBtn(1)" title="Увеличить">＋</button>
+          <button class="btn ghost sm" onclick="ocFit()">Вписать в окно</button>
+          <button class="btn ghost sm" onclick="ocReset()">100%</button>
+          <button class="btn ghost sm" onclick="ocExpandAll()">Развернуть все</button>
+          <button class="btn ghost sm" onclick="ocCollapseAll()">Свернуть все</button>
+          <label class="hint" style="display:flex;align-items:center;gap:5px">Уровни:
+            <select id="ocLevel" onchange="ocSetLevel(this.value)" style="padding:5px 7px;border:1px solid var(--line);border-radius:7px">
+              <option value="all">Все</option><option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option></select></label>
+          <label class="hint" style="display:flex;align-items:center;gap:5px">Колонки&nbsp;с&nbsp;ур.:
+            <select id="ocSplit" onchange="ocSetSplit(this.value)" style="padding:5px 7px;border:1px solid var(--line);border-radius:7px">
+              <option value="auto">авто</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+          <label class="hint" style="display:flex;align-items:center;gap:5px">
+            <input type="checkbox" id="ocMetrics" checked onchange="renderOrgChart()"> метрики</label>
+        </div></div>
+      <div class="bd" style="padding:0">
+        <div class="oc-viewport" id="ocViewport"><div class="oc-canvas" id="ocCanvas"></div></div>
+        <div style="padding:10px 16px" class="hint">Тяните схему мышью для перемещения, колесо мыши — масштаб. Клик по узлу — свернуть/развернуть ветку, ✎ (при наведении) — редактировать. Цвет и метка «ур.» показывают уровень.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EMPLOYEES -->
+  <section class="tab" id="tab-employees">
+    <div class="card">
+      <div class="hd"><h2>Сотрудники</h2><div class="spacer"></div>
+        <div class="searchbar">
+          <input type="text" id="empSearch" placeholder="Поиск: ФИО / должность…" oninput="renderEmployees()">
+          <select id="empUnitFilter" onchange="renderEmployees()"></select>
+        </div>
+        <button class="btn ghost sm" onclick="openImport('employees')">⤓ Импорт</button>
+        <button class="btn sm" onclick="openEmpModal()">＋ Сотрудник</button></div>
+      <div class="bd">
+        <div class="table-wrap"><table>
+          <thead><tr><th>ФИО</th><th>Должность</th><th>Подразделение</th>
+            <th class="num">Оклад, ₸</th><th class="num">Ставка</th><th class="num">Доплаты, ₸</th>
+            <th class="num">Начислено, ₸</th><th></th></tr></thead>
+          <tbody id="empBody"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCRUALS -->
+  <section class="tab" id="tab-accruals">
+    <div class="card" style="margin-bottom:16px">
+      <div class="hd"><h2>Период расчёта</h2><div class="spacer"></div><span class="hint">выплаты пересчитываются под выбранный период</span></div>
+      <div class="bd"><div class="periodbar" id="periodBarA"></div></div>
+    </div>
+    <div class="card">
+      <div class="hd"><h2>Начисления и социальные выплаты</h2><div class="spacer"></div>
+        <button class="btn sm" onclick="addAccrual()">＋ Начисление</button></div>
+      <div class="bd">
+        <p class="hint" style="margin-top:0">Ставки и суммы настраиваемые — проверьте актуальные значения РК на 2026 г. Тип «% от ФОТ/мес» начисляется ежемесячно (ОСМС, СО, ОПВР); «× оклада/год» и «фикс. ₸/год» (оздоровительные, отпускные, матпомощь) распределяются по периоду. База — начислено (оклад × ставка + доплаты).</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:36px"></th><th>Наименование</th><th style="width:150px">Тип</th>
+            <th class="num" style="width:110px">Значение</th><th class="num">Сумма за период, ₸</th>
+            <th class="num" style="width:70px">Доля</th><th style="width:44px"></th></tr></thead>
+          <tbody id="accrualBody"></tbody><tfoot id="accrualFoot"></tfoot></table></div>
+        <div class="card" style="margin-top:16px;box-shadow:none">
+          <div class="hd"><h2>Ранжировка выплат за период</h2><div class="spacer"></div><span class="hint" id="accrualPeriodLbl"></span></div>
+          <div class="bd"><div class="barchart" id="accrualChart"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANALYTICS -->
+  <section class="tab" id="tab-analytics">
+    <div class="card" style="margin-bottom:16px">
+      <div class="hd"><h2>Период расчёта</h2><div class="spacer"></div><span class="hint" id="periodInfoAn"></span></div>
+      <div class="bd"><div class="periodbar" id="periodBarAn"></div></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="row" style="margin-top:16px">
+      <div class="card" style="flex:2;min-width:340px">
+        <div class="hd"><h2>ФОТ по крупным блокам</h2><div class="spacer"></div><span class="hint" id="blockLbl"></span></div>
+        <div class="bd"><div class="barchart" id="blockChart"></div></div>
+      </div>
+      <div class="card" style="flex:1;min-width:280px">
+        <div class="hd"><h2>Топ выплат сотрудникам</h2><div class="spacer"></div><span class="hint">оклад+доплаты, ₸/мес</span></div>
+        <div class="bd"><div id="topSalaries"></div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="hd"><h2>Свод по подразделениям</h2><div class="spacer"></div><span class="hint">ФОТ ₸/мес</span></div>
+      <div class="bd"><div class="table-wrap"><table>
+        <thead><tr><th>Подразделение</th><th>Тип</th><th class="num">Сотр.</th><th class="num">Ставки</th>
+          <th class="num">ФОТ прямой</th><th class="num">ФОТ с вложенными</th></tr></thead>
+        <tbody id="analyticsBody"></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="tab active" id="tab-dashboard"><div id="dashBody"></div></section>
+  <section class="tab" id="tab-calc"><div id="calcBody"></div></section>
+  <section class="tab" id="tab-tariff"><div id="tariffBody"></div></section>
+  <section class="tab" id="tab-budget"><div id="budgetBody"></div></section>
+  <section class="tab" id="tab-contingent"><div id="contBody"></div></section>
+  <section class="tab" id="tab-inventory"><div id="invBody"></div></section>
+  <section class="tab" id="tab-plan"><div id="planBody"></div></section>
+  <section class="tab" id="tab-programs"><div id="progBody"></div></section>
+  <section class="tab" id="tab-rooms"><div id="roomBody"></div></section>
+  <section class="tab" id="tab-settings"><div id="setBody"></div></section>
+  <section class="tab" id="tab-admin"><div id="adminBody"></div></section>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="mh"><h3 id="modalTitle">—</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="mb" id="modalBody"></div>
+    <div class="mf"><button class="btn ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn" id="modalSave">Сохранить</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/accruals.js"></script>
+<script src="js/tabs.js"></script>
+<script src="js/structure.js"></script>
+<script src="js/orgchart.js"></script>
+<script src="js/employees.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/data-io.js"></script>
+<script src="js/render-all.js"></script>
+<script src="js/seed.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/tariff.js"></script>
+<script src="js/budget.js"></script>
+<script src="js/contingent.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/plan.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/import.js"></script>
+<script src="js/programs.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/init.js"></script>
+
+</body>
+</html>
