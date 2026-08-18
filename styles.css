@@ -1,4 +1,4 @@
-  :root{
+:root{
     --navy:#00264B; --navy2:#013a70; --accent:#2a6fb0; --accent-soft:#e8eef6;
     --bg:#eef1f5; --panel:#f7f9fb; --card:#ffffff; --line:#dbe2ea; --line2:#e9edf2;
     --text:#16212e; --muted:#5f6f80; --good:#1f9d55; --warn:#c98a00; --danger:#cf3b3b;
@@ -218,3 +218,32 @@
 .auth-note{margin-top:14px;color:#7a8699;font-size:12px;line-height:1.5}
 #acctChip{max-width:none;cursor:default}
 body.local-mode #acctChip{display:none!important}
+
+/* ================= ADMIN PANEL (собственная сетка, без общих table-стилей) ================= */
+.admin-msg{padding:22px 16px;color:var(--muted);text-align:center}
+.admin-banner{margin:0 0 12px;padding:9px 12px;border-radius:10px;background:#fff6e5;border:1px solid #f0d9a8;color:#8a6100;font-size:13px}
+.usr-list{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.usr-head,.usr-row{display:grid;grid-template-columns:minmax(0,1fr) 210px 150px 48px;align-items:center;gap:14px;padding:11px 16px}
+.usr-head{background:var(--panel);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.usr-row+.usr-row,.usr-head+.usr-row{border-top:1px solid var(--line)}
+.usr-row:hover{background:var(--panel)}
+.usr-id{min-width:0}
+.usr-email{font-weight:600;color:var(--navy);word-break:break-word;line-height:1.3}
+.usr-you{margin-left:6px;padding:1px 8px;border-radius:20px;background:#e7edf7;color:#0E356E;font-size:11px;font-weight:600;vertical-align:middle}
+.usr-name{margin-top:2px;font-size:12.5px;color:var(--muted)}
+.usr-sel{width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:13px;color:var(--text)}
+.usr-sel:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,38,75,.10)}
+.usr-sel:disabled{opacity:.55;cursor:not-allowed}
+.usr-st-active{color:var(--good);font-weight:600}
+.usr-st-pending{color:#b9820c;font-weight:600}
+.usr-st-blocked{color:var(--danger);font-weight:600}
+.usr-act{text-align:center}
+.usr-del{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1}
+.usr-del:hover{background:#fdecec;border-color:var(--danger)}
+.usr-note{margin:14px 2px 2px;font-size:12px;color:var(--muted);line-height:1.6}
+@media(max-width:640px){
+  .usr-head{display:none}
+  .usr-row{grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px}
+  .usr-id{grid-column:1 / -1}
+  .usr-act{grid-column:2;text-align:right}
+}
