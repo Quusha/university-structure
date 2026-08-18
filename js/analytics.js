@@ -43,3 +43,4 @@ function renderAnalytics(){
       <td class="num">${fmt(directPayroll(u.id))}</td><td class="num"><b>${fmt(rollupPayroll(u.id))}</b></td></tr>`).join('');
   document.getElementById('analyticsBody').innerHTML=rows||'<tr><td colspan="6" class="hint" style="padding:20px">Нет подразделений.</td></tr>';
 }
+

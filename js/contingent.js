@@ -11,3 +11,4 @@ function renderContingent(){
     +cardHTML('Группы контингента',`<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn sm" onclick="openEntModal(\'contingent\')">＋ Группа</button>':''}${impBtn('contingent')}</div><div id="contTable"></div>`);
   renderEntTable('contingent','contTable');
 }
+

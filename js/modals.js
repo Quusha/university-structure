@@ -85,3 +85,4 @@ function openEmpModal(id=null,unitId=null){
   setTimeout(()=>document.getElementById('fEmpName').focus(),50);
 }
 function deleteEmp(id){if(!canEdit()){toast('Роль только для просмотра');return}const e=state.employees.find(x=>x.id===id);if(!confirm(`Удалить сотрудника «${e.name}»?`))return;state.employees=state.employees.filter(x=>x.id!==id);save();renderAll();toast('Сотрудник удалён')}
+

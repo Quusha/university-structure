@@ -94,3 +94,4 @@ function openImport(key){
     <textarea id="impArea" style="width:100%;height:130px;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:monospace;font-size:12px" placeholder="${esc(headers)}"></textarea>
     <div id="impPrev" style="margin-top:12px"></div>`, importApply);
 }
+

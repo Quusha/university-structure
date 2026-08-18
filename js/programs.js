@@ -20,3 +20,4 @@ function renderPrograms(){
     +cardHTML('Контингент и аудиторный фонд по корпусам',`<div class="table-wrap"><table><thead><tr><th>Корпус</th><th class="num">Контингент</th><th class="num">Всего мест</th><th class="num">Лекц. места</th><th class="num">Комп. места</th><th class="num">Ориент. загрузка</th></tr></thead><tbody>${capRows||'<tr><td colspan="6" class="hint" style="padding:14px">Добавьте корпуса и аудитории во вкладке «Аудиторный фонд».</td></tr>'}${unassigned?`<tr><td class="hint">Не привязано к корпусу</td><td class="num">${fmt(unassigned)}</td><td colspan="4"></td></tr>`:''}</tbody></table></div><p class="hint">Загрузка = контингент / посадочные места (ориентир, без учёта сменности и расписания).</p>`);
   renderEntTable('program','progTable');
 }
+

@@ -27,3 +27,4 @@ function renderEmployees(){
         <button class="btn danger sm" onclick="deleteEmp('${e.id}')">🗑</button></td></tr>`;
   }).join('');
 }
+
